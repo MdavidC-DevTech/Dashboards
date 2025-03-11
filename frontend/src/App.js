@@ -1,7 +1,7 @@
 // src/App.js
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import api from "./services/api";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
@@ -39,27 +39,22 @@ function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
 
-  // Estado para token y para información del usuario actual
   const [token, setToken] = useState(localStorage.getItem("access_token") || null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Función para cargar la info del usuario actual usando /users/me
-  const fetchCurrentUser = async (token) => {
-    try {
-      const response = await axios.get("http://127.0.0.1:8000/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCurrentUser(response.data);
-    } catch (error) {
-      console.error("Error al obtener datos del usuario:", error);
-    }
-  };
-
-  // Al inicio o cuando token cambia, si existe, carga el usuario
+  // Cargar información del usuario actual si tienes implementado el endpoint /users/me.
   useEffect(() => {
     if (token) {
-      fetchCurrentUser(token);
+      api
+        .get("/users/me")
+        .then((response) => setCurrentUser(response.data))
+        .catch((error) => {
+          console.error("Error al obtener datos del usuario:", error);
+          // Si el token es inválido, se puede forzar el logout:
+          setToken(null);
+          localStorage.removeItem("access_token");
+        });
     } else {
       setCurrentUser(null);
     }

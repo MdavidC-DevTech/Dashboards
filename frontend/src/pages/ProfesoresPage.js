@@ -23,41 +23,48 @@ function ProfesoresPage() {
   const [aniosDisponibles, setAniosDisponibles] = useState([]);
   const [dataAgrupada, setDataAgrupada] = useState([]);
 
+  // Cargar datos solo una vez al montar
   useEffect(() => {
     fetchDatos()
       .then((data) => {
-        // data es un arreglo de objetos
         const soloProfes = data.filter((d) => d.role_shortname === "teacher");
         setRawData(soloProfes);
       })
       .catch((err) => console.error("Error al cargar datos:", err));
   }, []);
-  
 
-  // Actualizar opciones de curso, docente y año
+  // Actualizar opciones de curso, docente y año en base a rawData
   useEffect(() => {
     if (!rawData.length) return;
-    setCursosDisponibles(obtenerCursosFiltrados(rawData, docenteSeleccionado));
-    if (cursoSeleccionado && !obtenerCursosFiltrados(rawData, docenteSeleccionado).includes(cursoSeleccionado)) {
+    const cursos = obtenerCursosFiltrados(rawData, docenteSeleccionado);
+    setCursosDisponibles(cursos);
+    if (cursoSeleccionado && !cursos.includes(cursoSeleccionado)) {
       setCursoSeleccionado("");
     }
-    setDocentesDisponibles(obtenerDocentesFiltrados(rawData, cursoSeleccionado));
-    const anios = Array.from(new Set(rawData.map(d => new Date(d.event_date).getFullYear().toString())));
+    const docentes = obtenerDocentesFiltrados(rawData, cursoSeleccionado);
+    setDocentesDisponibles(docentes);
+    const anios = Array.from(
+      new Set(rawData.map((d) => new Date(d.event_date).getFullYear().toString()))
+    );
     setAniosDisponibles(anios);
   }, [rawData, cursoSeleccionado, docenteSeleccionado]);
 
-  // Filtrar y agrupar data para el gráfico
+  // Filtrar y agrupar la data para el gráfico
   useEffect(() => {
     let filtrados = rawData;
     if (cursoSeleccionado) {
-      filtrados = filtrados.filter(d => d.course_fullname === cursoSeleccionado);
+      filtrados = filtrados.filter((d) => d.course_fullname === cursoSeleccionado);
     }
     if (docenteSeleccionado) {
-      filtrados = filtrados.filter(d => d.Combinada === docenteSeleccionado);
+      // Comparar concatenación de nombres
+      filtrados = filtrados.filter(
+        (d) => `${d.user_fname} ${d.user_sname}` === docenteSeleccionado
+      );
     }
-    const agrupados = agrupacionModo === "mes" 
-      ? agruparDataPorMes(filtrados, yearSeleccionado, unidadTiempo)
-      : agruparDataPorAnio(filtrados, yearSeleccionado, unidadTiempo);
+    const agrupados =
+      agrupacionModo === "mes"
+        ? agruparDataPorMes(filtrados, yearSeleccionado, unidadTiempo)
+        : agruparDataPorAnio(filtrados, yearSeleccionado, unidadTiempo);
     setDataAgrupada(agrupados);
   }, [rawData, cursoSeleccionado, docenteSeleccionado, yearSeleccionado, unidadTiempo, agrupacionModo]);
 
@@ -69,7 +76,7 @@ function ProfesoresPage() {
       <div style={{ marginBottom: "10px" }}>
         <label>
           <b>Unidad de tiempo: </b>
-          <select value={unidadTiempo} onChange={e => setUnidadTiempo(e.target.value)}>
+          <select value={unidadTiempo} onChange={(e) => setUnidadTiempo(e.target.value)}>
             <option value="minutos">Minutos</option>
             <option value="horas">Horas</option>
           </select>

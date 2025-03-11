@@ -2,7 +2,7 @@
 backend/env/
 venv/
 .env
-
+backendN/node_modules
 # Archivos y carpetas de caché de Python
 *.pyc
 __pycache__/
