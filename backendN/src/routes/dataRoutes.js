@@ -2,7 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const dataController = require('../controllers/dataController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/datos', dataController.getData);
+// GET /datos => filtra los logs según el colegio del usuario
+router.get('/datos', authMiddleware, dataController.getDatos);
 
 module.exports = router;

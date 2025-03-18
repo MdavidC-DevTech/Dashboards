@@ -1,26 +1,40 @@
 // src/controllers/authController.js
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const config = require('../config/config');
-const { fakeUsersDb } = require('../models/fakeUsers'); // Puedes tener una simulación similar
-const fakeUsers = require('../models/fakeUsers'); 
+const fakeUsers = require('../models/fakeUsers');
 
-// Función para autenticar usuario
 async function login(req, res) {
-  const { username, password } = req.body;
-  // Aquí buscas el usuario en la base de datos o en tu objeto de usuarios simulados
-  const user = fakeUsersDb[username];
-  if (!user) {
-    return res.status(401).json({ detail: "Nombre de usuario o contraseña incorrectos" });
+  try {
+    const { username, password } = req.body;
+    const user = fakeUsers[username]; // user = { username, password, role, categoryId, ... }
+
+    if (!user) {
+      return res.status(401).json({ detail: 'Usuario o contraseña incorrectos' });
+    }
+    if (password !== user.password) {
+      return res.status(401).json({ detail: 'Usuario o contraseña incorrectos' });
+    }
+
+    const expiresIn = config.accessTokenExpireMinutes * 60; // en segundos
+    // dentro user tienes user.role, user.categoryId, etc.
+    const token = jwt.sign(
+      { 
+        sub: username,  // o user.id si tu fakeUsers tiene un 'id' numérico
+        role: user.role,
+        categoryId: user.categoryId,
+      },
+      config.secretKey,
+      { expiresIn }
+    );
+
+    res.json({ 
+      access_token: token,
+      token_type: 'bearer'
+    });
+  } catch (err) {
+    console.error('Error en login:', err);
+    return res.status(500).json({ error: 'Error interno en login' });
   }
-  const validPassword = bcrypt.compareSync(password, user.hashed_password);
-  if (!validPassword) {
-    return res.status(401).json({ detail: "Nombre de usuario o contraseña incorrectos" });
-  }
-  // Crear token
-  const expiresIn = config.accessTokenExpireMinutes * 60; // en segundos
-  const token = jwt.sign({ sub: user.username }, config.secretKey, { expiresIn });
-  res.json({ access_token: token, token_type: "bearer" });
 }
 
 module.exports = { login };

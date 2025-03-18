@@ -1,7 +1,6 @@
 // src/services/api.js
 import axios from "axios";
 
-// Instancia de Axios apuntando al backend de producción
 const api = axios.create({
   baseURL: "https://apin.crazy-shaw.74-208-19-154.plesk.page",
 });
@@ -15,10 +14,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Función para obtener datos (endpoint /datos)
+// Función para obtener datos (endpoint /data/datos)
 export const fetchDatos = async () => {
   try {
-    const response = await api.get("/datos");
+    const response = await api.get("/data/datos");
     return response.data;
   } catch (error) {
     console.error("Error al obtener los datos:", error);

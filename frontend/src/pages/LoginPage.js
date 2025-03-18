@@ -1,35 +1,30 @@
 // src/pages/LoginPage.js
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { AuthContext } from "../context/AuthContext";
 
-function LoginPage({ onLoginSuccess }) {
+function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
+
+  // Obtén la función login(...) del AuthContext
+  const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Envío de credenciales en formato JSON
-      const response = await api.post(
-        "/token",
-        { username, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      
-
+      const response = await api.post("/auth/token", { username, password });
       const { access_token } = response.data;
-      localStorage.setItem("access_token", access_token);
 
-      if (onLoginSuccess) {
-        onLoginSuccess(response.data);
-      }
+      // Llamamos la función login(...) para actualizar el token en el contexto
+      login(access_token);
 
-      // Redirige a la ruta protegida (ej. /profesores)
+      // Redirigimos a /profesores (o la ruta que desees)
       navigate("/profesores");
-      console.log(response.data);
     } catch (err) {
       setError("Error de autenticación. Revisa tus credenciales.");
       console.error(err);

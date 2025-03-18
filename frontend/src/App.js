@@ -1,6 +1,12 @@
 // src/App.js
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import api from "./services/api";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
@@ -10,7 +16,8 @@ import ProfesoresPage from "./pages/ProfesoresPage";
 import EstudiantesPage from "./pages/EstudiantesPage";
 import ConteoAccesoPage from "./pages/ConteoAccesoPage";
 
-function MainLayout({ children, isSidebarOpen, onMenuClick, currentUser, onLogout }) {
+// Layout para rutas autenticadas (con header, sidebar, etc.)
+const MainLayout = ({ children, currentUser, onLogout, onMenuClick, isSidebarOpen }) => {
   return (
     <>
       <Header currentUser={currentUser} onLogout={onLogout} onMenuClick={onMenuClick} />
@@ -29,31 +36,40 @@ function MainLayout({ children, isSidebarOpen, onMenuClick, currentUser, onLogou
       <Footer />
     </>
   );
-}
+};
 
-function AuthLayout({ children }) {
+// Layout para la autenticación (solo el Login)
+const AuthLayout = ({ children }) => {
   return <>{children}</>;
-}
+};
 
-function AppContent() {
+const AppContent = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
 
   const [token, setToken] = useState(localStorage.getItem("access_token") || null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [loadingUser, setLoadingUser] = useState(false);
 
-  // Cargar información del usuario actual si tienes implementado el endpoint /users/me.
+  // Se ejecuta cada vez que el token cambia
   useEffect(() => {
     if (token) {
+      setLoadingUser(true);
       api
-        .get("/users/me")
-        .then((response) => setCurrentUser(response.data))
+        .get("/auth/users/me")
+        .then((response) => {
+          console.log("Respuesta de /auth/users/me:", response.data);
+          setCurrentUser(response.data.user);
+        })
         .catch((error) => {
           console.error("Error al obtener datos del usuario:", error);
-          // Si el token es inválido, se puede forzar el logout:
-          setToken(null);
+          setCurrentUser(null);
           localStorage.removeItem("access_token");
+          setToken(null);
+        })
+        .finally(() => {
+          setLoadingUser(false);
         });
     } else {
       setCurrentUser(null);
@@ -71,10 +87,12 @@ function AppContent() {
     localStorage.removeItem("access_token");
   };
 
+  // ProtectedRoute: si hay token se muestra, sino redirige a /login
   const ProtectedRoute = ({ children }) => {
     return token ? children : <Navigate to="/login" />;
   };
 
+  // Si estamos en /login, mostramos solo el AuthLayout
   if (isLoginPage) {
     return (
       <AuthLayout>
@@ -84,6 +102,11 @@ function AppContent() {
         </Routes>
       </AuthLayout>
     );
+  }
+
+  // Mientras se carga la info del usuario, podríamos mostrar un loader
+  if (loadingUser) {
+    return <div>Cargando información...</div>;
   }
 
   return (
@@ -102,7 +125,7 @@ function AppContent() {
       </Routes>
     </MainLayout>
   );
-}
+};
 
 function App() {
   return (
