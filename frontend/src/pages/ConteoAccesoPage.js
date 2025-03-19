@@ -1,58 +1,61 @@
-// src/pages/ConteoAccesoPage.js
-import React, { useState, useEffect } from "react";
-import { fetchDatos } from "../services/api";
+import React, { useContext, useState, useEffect } from "react";
+import { DataContext } from "../context/DataContext";
 import { agruparAccesoPorRango, obtenerCursosSinDocente } from "../utils/dataUtils";
 import SearchableSelect from "../components/SearchableSelect";
 import StackedAcceso from "../components/StackedAcceso";
 
 function ConteoAccesoPage() {
-  const [rawData, setRawData] = useState([]);
+  // Obtenemos la data y el estado de carga desde DataContext
+  const { data, loadingData } = useContext(DataContext);
+
+  // Estados locales para filtros
   const [rolSeleccionado, setRolSeleccionado] = useState("todos");
   const [cursoSeleccionado, setCursoSeleccionado] = useState("");
   const [yearSeleccionado, setYearSeleccionado] = useState("");
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
   const [dataAgrupada, setDataAgrupada] = useState([]);
 
-  // Cargar datos al montar
+  // Actualizar opciones de cursos basados en la data disponible
   useEffect(() => {
-    fetchDatos()
-      .then((res) => {
-        setRawData(res);
-      })
-      .catch((err) => console.error("Error al cargar datos:", err));
-  }, []);
-
-  // Actualizar opciones de curso
-  useEffect(() => {
-    if (!rawData.length) return;
-    const cursos = obtenerCursosSinDocente(rawData);
+    if (!data.length) return;
+    const cursos = obtenerCursosSinDocente(data);
     setCursosDisponibles(cursos);
+    // Reiniciamos el curso seleccionado si ya no está en las opciones
     if (cursoSeleccionado && !cursos.includes(cursoSeleccionado)) {
       setCursoSeleccionado("");
     }
-  }, [rawData, cursoSeleccionado]);
+  }, [data, cursoSeleccionado]);
 
-  // Filtrar y agrupar para el gráfico de conteo de acceso
+  // Filtrar y agrupar la data para el gráfico
   useEffect(() => {
-    let filtrados = rawData;
+    if (!data.length) return;
+    let filtrados = data;
+    // Filtrar por rol
     if (rolSeleccionado === "teacher") {
       filtrados = filtrados.filter((d) => d.role_shortname === "teacher");
     } else if (rolSeleccionado === "student") {
       filtrados = filtrados.filter((d) => d.role_shortname === "student");
     }
+    // Filtrar por curso si se ha seleccionado alguno
     if (cursoSeleccionado) {
       filtrados = filtrados.filter((d) => d.course_fullname === cursoSeleccionado);
     }
+    // Agrupar la data según el año y otros parámetros
     const agrupados = agruparAccesoPorRango(filtrados, yearSeleccionado);
     setDataAgrupada(agrupados);
-  }, [rawData, rolSeleccionado, cursoSeleccionado, yearSeleccionado]);
+  }, [data, rolSeleccionado, cursoSeleccionado, yearSeleccionado]);
+
+  // Si aún se cargan los datos, mostramos un loader
+  if (loadingData) {
+    return <div>Cargando datos...</div>;
+  }
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Conteo de Acceso</h1>
       <SearchableSelect
         label="Año"
-        options={Array.from(new Set(rawData.map((d) => new Date(d.event_date).getFullYear().toString())))}
+        options={Array.from(new Set(data.map((d) => new Date(d.event_date).getFullYear().toString())))}
         value={yearSeleccionado}
         onChange={setYearSeleccionado}
       />

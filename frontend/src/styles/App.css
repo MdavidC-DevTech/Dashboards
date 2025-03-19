@@ -1,0 +1,85 @@
+/* src/styles/App.css */
+
+/* Estilos globales */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+  }
+
+  .container {
+    max-width: 1200px; /* o el valor que desees */
+    margin: 0 auto;    /* centra horizontalmente */
+    padding: 0 20px;   /* espaciado interno opcional */
+  }
+  
+  
+  /* Header */
+  .header {
+    background-color: #003366;
+    color: #fff;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+ /* Sidebar */
+.sidebar {
+    background-color: #003366;
+    height: calc(100vh - 64px);
+    position: fixed;
+    left: 8px;
+    top: 64px;
+    overflow-x: hidden;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    transition: width 0.3s;
+  }
+  
+  /* Main content */
+  .main-content {
+    flex: 1;
+    padding: 20px;
+    background-color: #f5f5f5;
+    transition: margin-left 0.3s ease;
+  }
+  
+  /* Footer */
+  .footer {
+    background-color: #003366;
+    color: #fff;
+    padding: 10px 20px;
+    text-align: center;
+  }
+  
+  /* Login page */
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Media queries para responsividad */
+  @media (max-width: 768px) {
+    .sidebar {
+      display: none;
+    }
+    .main-content {
+      margin-left: 0;
+    }
+  }

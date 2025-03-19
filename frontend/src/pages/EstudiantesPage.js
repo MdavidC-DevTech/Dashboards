@@ -1,6 +1,6 @@
 // src/pages/EstudiantesPage.js
-import React, { useState, useEffect } from "react";
-import { fetchDatos } from "../services/api";
+import React, { useContext, useState, useEffect } from "react";
+import { DataContext } from "../context/DataContext";
 import {
   obtenerCursosFiltrados,
   agruparDataPorMes,
@@ -10,7 +10,7 @@ import SearchableSelect from "../components/SearchableSelect";
 import BarraActivos from "../components/BarraActivos";
 
 function EstudiantesPage() {
-  const [rawData, setRawData] = useState([]);
+  const { data, loadingData } = useContext(DataContext);
   const [cursoSeleccionado, setCursoSeleccionado] = useState("");
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState("");
   const [yearSeleccionado, setYearSeleccionado] = useState("");
@@ -22,55 +22,54 @@ function EstudiantesPage() {
   const [aniosDisponibles, setAniosDisponibles] = useState([]);
   const [dataAgrupada, setDataAgrupada] = useState([]);
 
-  // Cargar datos al montar
+  // Actualizar opciones de filtros basados en la data para estudiantes
   useEffect(() => {
-    fetchDatos()
-      .then((data) => {
-        const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
-        setRawData(soloEstudiantes);
-      })
-      .catch((err) => console.error("Error al cargar datos:", err));
-  }, []);
-
-  // Actualizar opciones de filtros basados en rawData
-  useEffect(() => {
-    if (!rawData.length) return;
-    setCursosDisponibles(obtenerCursosFiltrados(rawData, estudianteSeleccionado));
-    if (cursoSeleccionado && !obtenerCursosFiltrados(rawData, estudianteSeleccionado).includes(cursoSeleccionado)) {
-      setCursoSeleccionado("");
-    }
-    // Combina user_fname y user_sname para estudiantes
-    const estudiantes = Array.from(new Set(rawData.map((d) => `${d.user_fname} ${d.user_sname}`)));
-    setEstudiantesDisponibles(estudiantes);
-    const anios = Array.from(
-      new Set(rawData.map((d) => new Date(d.event_date).getFullYear().toString()))
-    );
-    setAniosDisponibles(anios);
-  }, [rawData, cursoSeleccionado, estudianteSeleccionado]);
-
-  // Filtrar y agrupar data para el gráfico
-  useEffect(() => {
-    let filtrados = rawData;
-    if (cursoSeleccionado) {
-      filtrados = filtrados.filter((d) => d.course_fullname === cursoSeleccionado);
-    }
-    if (estudianteSeleccionado) {
-      filtrados = filtrados.filter(
-        (d) => `${d.user_fname} ${d.user_sname}` === estudianteSeleccionado
+    if (data && data.length > 0) {
+      const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
+      const cursos = obtenerCursosFiltrados(soloEstudiantes, estudianteSeleccionado);
+      setCursosDisponibles(cursos);
+      if (cursoSeleccionado && !cursos.includes(cursoSeleccionado)) {
+        setCursoSeleccionado("");
+      }
+      const estudiantes = Array.from(
+        new Set(soloEstudiantes.map((d) => `${d.user_fname} ${d.user_sname}`))
       );
+      setEstudiantesDisponibles(estudiantes);
+      const anios = Array.from(
+        new Set(soloEstudiantes.map((d) => new Date(d.event_date).getFullYear().toString()))
+      );
+      setAniosDisponibles(anios);
     }
-    const agrupados =
-      agrupacionModo === "mes"
-        ? agruparDataPorMes(filtrados, yearSeleccionado, unidadTiempo)
-        : agruparDataPorAnio(filtrados, yearSeleccionado, unidadTiempo);
-    setDataAgrupada(agrupados);
-  }, [rawData, cursoSeleccionado, estudianteSeleccionado, yearSeleccionado, unidadTiempo, agrupacionModo]);
+  }, [data, cursoSeleccionado, estudianteSeleccionado]);
+
+  // Filtrar y agrupar la data para el gráfico
+  useEffect(() => {
+    if (data && data.length > 0) {
+      const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
+      let filtrados = soloEstudiantes;
+      if (cursoSeleccionado) {
+        filtrados = filtrados.filter((d) => d.course_fullname === cursoSeleccionado);
+      }
+      if (estudianteSeleccionado) {
+        filtrados = filtrados.filter(
+          (d) => `${d.user_fname} ${d.user_sname}` === estudianteSeleccionado
+        );
+      }
+      const agrupados =
+        agrupacionModo === "mes"
+          ? agruparDataPorMes(filtrados, yearSeleccionado, unidadTiempo)
+          : agruparDataPorAnio(filtrados, yearSeleccionado, unidadTiempo);
+      setDataAgrupada(agrupados);
+    }
+  }, [data, cursoSeleccionado, estudianteSeleccionado, yearSeleccionado, unidadTiempo, agrupacionModo]);
+
+  if (loadingData) {
+    return <div>Cargando datos...</div>;
+  }
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Pestaña Estudiantes</h1>
-      
-      {/* Control de Unidad de Tiempo */}
       <div style={{ marginBottom: "10px" }}>
         <label>
           <b>Unidad de tiempo: </b>
@@ -80,8 +79,6 @@ function EstudiantesPage() {
           </select>
         </label>
       </div>
-      
-      {/* Control de Agrupación: Mes vs. Año */}
       <div style={{ marginBottom: "10px" }}>
         <label>
           <b>Agrupar por: </b>
@@ -91,7 +88,8 @@ function EstudiantesPage() {
             value="mes"
             checked={agrupacionModo === "mes"}
             onChange={() => setAgrupacionModo("mes")}
-          /> Mes
+          />{" "}
+          Mes
         </label>
         <label style={{ marginLeft: "10px" }}>
           <input
@@ -100,19 +98,16 @@ function EstudiantesPage() {
             value="anio"
             checked={agrupacionModo === "anio"}
             onChange={() => setAgrupacionModo("anio")}
-          /> Año
+          />{" "}
+          Año
         </label>
       </div>
-      
-      {/* Filtro de Año */}
       <SearchableSelect
         label="Año"
         options={aniosDisponibles}
         value={yearSeleccionado}
         onChange={setYearSeleccionado}
       />
-      
-      {/* Filtros de Curso y Estudiante */}
       <SearchableSelect
         label="Curso"
         options={cursosDisponibles}
@@ -125,8 +120,6 @@ function EstudiantesPage() {
         value={estudianteSeleccionado}
         onChange={setEstudianteSeleccionado}
       />
-      
-      {/* Gráfico de barras */}
       <BarraActivos data={dataAgrupada} unidadTiempo={unidadTiempo} />
     </div>
   );

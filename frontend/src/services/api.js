@@ -5,7 +5,6 @@ const api = axios.create({
   baseURL: "https://apin.crazy-shaw.74-208-19-154.plesk.page",
 });
 
-// Interceptor para inyectar el token en cada petición
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
   if (token) {
@@ -14,7 +13,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Función para obtener datos (endpoint /data/datos)
 export const fetchDatos = async () => {
   try {
     const response = await api.get("/data/datos");
