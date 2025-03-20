@@ -17,17 +17,7 @@ function Header({ onMenuClick }) {
   return (
     <header className="header">
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-        <button
-          onClick={onMenuClick}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "#fff",
-            fontSize: "24px",
-            cursor: "pointer",
-            padding: "5px"
-          }}
-        >
+        <button onClick={onMenuClick} style={{ background: "transparent", border: "none", color: "#fff", fontSize: "24px", cursor: "pointer" }}>
           <FaBars />
         </button>
         <img src={logo} alt="Logo" style={{ height: "40px" }} />
@@ -36,21 +26,10 @@ function Header({ onMenuClick }) {
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         {currentUser && (
           <span>
-            Bienvenido, {currentUser.full_name} ({currentUser.role})
-            {currentUser.collegeName && ` - ${currentUser.collegeName}`}
+            {currentUser.full_name} ({currentUser.role}){currentUser.collegeName && ` - ${currentUser.collegeName}`}
           </span>
         )}
-        <button
-          onClick={handleLogout}
-          style={{
-            background: "#ff4d4d",
-            border: "none",
-            color: "#fff",
-            padding: "8px 12px",
-            borderRadius: "5px",
-            cursor: "pointer"
-          }}
-        >
+        <button onClick={handleLogout} style={{ background: "#ff4d4d", border: "none", color: "#fff", padding: "8px 12px", borderRadius: "5px", cursor: "pointer" }}>
           Cerrar sesión
         </button>
       </div>
