@@ -13,11 +13,7 @@
   }
 }
 
-.container {
-  max-width: 1200px; /* o el valor que desees */
-  margin: 0 auto;    /* centra horizontalmente */
-  padding: 0 20px;   /* espaciado interno opcional */
-}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;

@@ -6,7 +6,7 @@ const fakeUsers = require('../models/fakeUsers');
 async function login(req, res) {
   try {
     const { username, password } = req.body;
-    const user = fakeUsers[username]; // user = { username, password, role, categoryId, ... }
+    const user = fakeUsers[username]; // Busca en fakeUsers
 
     if (!user) {
       return res.status(401).json({ detail: 'Usuario o contraseña incorrectos' });
@@ -16,12 +16,12 @@ async function login(req, res) {
     }
 
     const expiresIn = config.accessTokenExpireMinutes * 60; // en segundos
-    // dentro user tienes user.role, user.categoryId, etc.
+    // Firma el token con datos mínimos
     const token = jwt.sign(
       { 
-        sub: username,  // o user.id si tu fakeUsers tiene un 'id' numérico
+        sub: username,
         role: user.role,
-        categoryId: user.categoryId,
+        categoryId: user.categoryId
       },
       config.secretKey,
       { expiresIn }

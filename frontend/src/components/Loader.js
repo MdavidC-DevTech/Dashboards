@@ -1,14 +1,13 @@
-// src/components/Loader.js
 import React from "react";
-import "../styles/Loader.css"; // Define la animación aquí
+import "../styles/Loader.css"; // Importa los estilos del loader
 
-const Loader = () => (
-  <div className="loader-container">
-    <div className="spinner"></div>
-    <div></div>
-    <div><h1>Cargargando datos espere....</h1></div>
-  </div>
-  
-);
+function Loader() {
+  return (
+    <div className="loader-container">
+      <div className="spinner"></div>
+      <p className="loader-text">Cargando datos...</p>
+    </div>
+  );
+}
 
 export default Loader;

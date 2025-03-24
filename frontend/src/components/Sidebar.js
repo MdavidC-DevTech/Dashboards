@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaChalkboardTeacher, FaUserGraduate, FaDoorOpen } from "react-icons/fa";
-import "../styles/App.css"; // Asegúrate de importar tus estilos globales
+import "../styles/sidebar.css"; // Importa el CSS dedicado al sidebar
 
 function Sidebar({ isOpen }) {
   const location = useLocation();
@@ -15,11 +15,11 @@ function Sidebar({ isOpen }) {
 
   // Definimos si es móvil según el ancho
   const isMobile = windowWidth < 768;
-
-  // Asignamos clases según estado y tamaño de pantalla
   let sidebarClass = "sidebar";
   if (isMobile) {
-    sidebarClass += isOpen ? " sidebar--expanded-mobile" : " sidebar--hidden-mobile";
+    sidebarClass += isOpen
+      ? " sidebar--expanded-mobile"
+      : " sidebar--hidden-mobile";
   } else {
     sidebarClass += isOpen ? "" : " sidebar--collapsed";
   }
@@ -33,7 +33,7 @@ function Sidebar({ isOpen }) {
   return (
     <aside className={sidebarClass}>
       {(!isMobile || isOpen) && (
-        <nav style={{ marginTop: "20px" }}>
+        <nav>
           {menuItems.map((item) => (
             <Link
               key={item.path}

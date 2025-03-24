@@ -21,7 +21,7 @@ function Header({ onMenuClick }) {
           <FaBars />
         </button>
         <img src={logo} alt="Logo" style={{ height: "40px" }} />
-        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>Dashboard</h1>
+        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>DASHBOARD</h1>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         {currentUser && (

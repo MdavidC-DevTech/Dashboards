@@ -3,6 +3,8 @@ import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import "../styles/login.css"; // nuevo archivo de estilos para LoginPage
+import logo from "../img/logo.png";
 
 function LoginPage() {
   const { currentUser, login } = useContext(AuthContext);
@@ -34,50 +36,37 @@ function LoginPage() {
       console.error(err);
     }
   };
-
+  
   return (
     <div className="login-container">
       <div className="login-card">
-        <h2 style={{ textAlign: "center", color: "#003366", marginBottom: "20px", fontFamily: "Arial, sans-serif" }}>
-          Iniciar sesión
-        </h2>
+        {/* LOGO */}
+        <h2 className="login-title">Bienvenido a Dashboard</h2>
+         <img src={logo} alt="Robotic Minds" className="login-logo" />
+        {/* TÍTULO */}
+        <h2 className="login-title">Iniciar sesión</h2>
+        {/* FORMULARIO */}
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", color: "#003366", fontWeight: "bold" }}>
-              Usuario:
-            </label>
+          <div className="input-group">
+            <label className="input-label">Usuario:</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "5px" }}
+              className="input-field"
             />
           </div>
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", color: "#003366", fontWeight: "bold" }}>
-              Contraseña:
-            </label>
+          <div className="input-group">
+            <label className="input-label">Contraseña:</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "5px" }}
+              className="input-field"
             />
           </div>
-          {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              padding: "10px",
-              backgroundColor: "#003366",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontSize: "16px",
-            }}
-          >
+          {error && <p className="error-text">{error}</p>}
+          <button type="submit" className="btn">
             Iniciar sesión
           </button>
         </form>

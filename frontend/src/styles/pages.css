@@ -1,0 +1,99 @@
+.page-container {
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(180deg, #f0f2f5 0%, #ffffff 100%); /* Opcional */
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+    color: #003366;
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Poppins', sans-serif; /* o la que uses */
+  }
+  
+  .page-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: visible;
+  }
+  
+  .page-card-header {
+    background-color: #003366;
+    color: #fff;
+    padding: 12px 16px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .page-card-body {
+    padding: 20px;
+  }
+  
+  /* Grid para los filtros */
+  .filter-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 15px;
+  }
+  
+  /* Cada "filter-item" es una celda */
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .filter-item label {
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #003366;
+  }
+  
+  /* Loader y error states */
+  .loading-container {
+    text-align: center;
+    margin-top: 50px;
+  }
+  
+  .loader {
+    margin: 0 auto;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #003366;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .error-text {
+    color: red;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  /* Botón principal */
+  .btn-primary {
+    padding: 10px 16px;
+    background-color: #003366;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-primary:hover {
+    background-color: #002244;
+  }
+  

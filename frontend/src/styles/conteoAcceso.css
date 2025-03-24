@@ -1,0 +1,19 @@
+.conteo-page {
+    padding: 20px;
+  }
+  
+  .conteo-page h1 {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  /* Para el select y el grupo de filtros */
+  .filter-group {
+    margin-bottom: 15px;
+  }
+  
+  .filter-group label {
+    font-weight: bold;
+    margin-right: 5px;
+  }
+  

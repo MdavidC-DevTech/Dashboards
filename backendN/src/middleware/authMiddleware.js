@@ -1,3 +1,4 @@
+// src/middlewares/authMiddleware.js
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
@@ -14,13 +15,8 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const verified = jwt.verify(token, process.env.SECRET_KEY);
-    // Metemos debug en req
-    req.debugInfo = {
-      secretKey: process.env.SECRET_KEY,
-      verified
-    };
     req.user = verified;
-    next(); // si todo sale bien
+    next();
   } catch (err) {
     console.error("Token inválido:", err);
     return res.status(400).json({ message: "Token inválido" });

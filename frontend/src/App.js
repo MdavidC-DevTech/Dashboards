@@ -1,4 +1,3 @@
-// src/App.js
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -7,7 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import "./styles/App.css"; // Importa el CSS global
+import "./styles/App.css"; // Importa tus estilos globales (layout, variables, etc.)
 
 // Componentes y páginas
 import Header from "./components/Header";
@@ -20,53 +19,55 @@ import ConteoAccesoPage from "./pages/ConteoAccesoPage";
 
 // Contextos
 import { AuthProvider, AuthContext } from "./context/AuthContext";
-import { DataProvider, DataContext } from "./context/DataContext"; // <-- Asegúrate de importar DataContext
+import { DataProvider, DataContext } from "./context/DataContext";
 
-// Componente Loader para mostrar mientras se carga información
+// Componente Loader
 import Loader from "./components/Loader";
 
-// Componente ProtectedRoute: si no hay token en el contexto, redirige a /login
+// Protege las rutas si no hay token
 const ProtectedRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
   return token ? children : <Navigate to="/login" />;
 };
 
-// Layout principal para las rutas protegidas
+// Layout principal (header + sidebar + main + footer)
 const MainLayout = ({ children }) => {
   const { currentUser, logout, loadingUser } = React.useContext(AuthContext);
-  const { loadingData } = React.useContext(DataContext);  // <-- Importante
+  const { loadingData } = React.useContext(DataContext);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
-  // Mientras se carga la info de usuario o la data, muestra Loader
+  // Mostrar loader si el usuario o la data están cargando
   if (loadingUser || loadingData) {
     return <Loader />;
   }
 
-
   return (
     <>
+      {/* Header fijo */}
       <Header
         currentUser={currentUser}
         onLogout={logout}
         onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
       />
-      <Sidebar isOpen={isSidebarOpen} />
-      <main
-        style={{
-          marginLeft: isSidebarOpen ? "250px" : "70px",
-          padding: "20px",
-          transition: "margin-left 0.3s",
-          backgroundColor: "#f5f5f5",
-        }}
+
+      {/* Contenedor principal: Sidebar + Main Content */}
+      <div
+        className={`layout ${isSidebarOpen ? "sidebar-open" : "sidebar-collapsed"}`}
       >
-        {children}
-      </main>
+        <Sidebar isOpen={isSidebarOpen} />
+
+        {/* El contenido principal (pages) */}
+        <main className="main-content">
+          {children}
+        </main>
+      </div>
+
       <Footer />
     </>
   );
 };
 
-// Rutas protegidas (para usuarios autenticados)
+// Rutas que requieren autenticación
 const AppContent = () => {
   return (
     <MainLayout>
@@ -109,7 +110,7 @@ const AppContent = () => {
   );
 };
 
-// Rutas públicas: solo para el login
+// Rutas públicas (para el login)
 const PublicRoutes = () => {
   return (
     <Routes>
@@ -119,13 +120,14 @@ const PublicRoutes = () => {
   );
 };
 
-// Componente que decide qué rutas mostrar según la ruta actual
+// Determina si se muestra login o rutas protegidas
 const AppRoutes = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
   return isLoginPage ? <PublicRoutes /> : <AppContent />;
 };
 
+// App principal con Providers
 function App() {
   return (
     <AuthProvider>

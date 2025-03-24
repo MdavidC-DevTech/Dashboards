@@ -1,0 +1,13 @@
+:root {
+    --primary-color: #003366;
+    --secondary-color: #004488;
+    --bg-color: #f0f2f5;
+    --font-family: 'Arial, sans-serif';
+    --header-height: 64px;
+    --container-max-width: 1200px;
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    /* O la que prefieras */
+  }
+  
