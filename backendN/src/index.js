@@ -6,6 +6,7 @@ const config = require('./config/config'); // Configuración: puerto, etc.
 
 const authRoutes = require('./routes/authRoutes');
 const dataRoutes = require('./routes/dataRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(express.json());
 // 4. Montar rutas
 app.use('/auth', authRoutes);
 app.use('/data', dataRoutes);
+app.use('/users', userRoutes); // Esto hará que el endpoint se encuentre en /users/update
 
 // 5. Ruta de prueba
 app.get('/', (req, res) => {

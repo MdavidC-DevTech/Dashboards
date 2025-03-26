@@ -1,81 +1,102 @@
 :root {
-    --header-height: 64px;
-    --sidebar-width-open: 250px;
-    --sidebar-width-collapsed: 70px;
-    --primary-color: #003366;
-    --secondary-color: #004488;
-    --bg-color: #f0f2f5;
-    --font-family: 'Arial, sans-serif';
-  }
-  
-/* HEADER */
-.header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--header-height);
-    background-color: var(--primary-color);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    z-index: 1000;
+  /* Escritorio */
+  --header-height: 64px;
+  --sidebar-width-open: 250px;      /* Ancho cuando está expandido */
+  --sidebar-width-collapsed: 70px;  /* Ancho “icon-only” */
+
+  /* Móvil (overlay) */
+  --sidebar-width-mobile-open: 200px; /* overlay width en móvil */
+
+  --primary-color: #003366;
+  --secondary-color: #004488;
+  --bg-color: #f0f2f5;
+  --font-family: 'Arial, sans-serif';
+}
+
+/* LAYOUT DEBAJO DEL HEADER */
+.layout {
+  display: flex;
+  margin-top: var(--header-height);
+  min-height: calc(100vh - var(--header-height));
+  background-color: var(--bg-color);
+}
+
+/* SIDEBAR (ESCRITORIO) */
+.sidebar {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  width: var(--sidebar-width-open); /* Abierto por defecto */
+  height: calc(100vh - var(--header-height));
+  background-color: var(--primary-color);
+  color: #fff;
+  overflow-y: auto;
+  transition: width 0.3s ease, transform 0.3s ease;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 900;
+}
+
+/* SIDEBAR “ICON ONLY” (COLLAPSED) EN ESCRITORIO */
+.sidebar--collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+/* MAIN CONTENT y FOOTER (ESCRITORIO) */
+.main-content,
+.footer {
+  flex: 1;
+  padding: 20px;
+  margin-left: var(--sidebar-width-open);
+  transition: margin-left 0.3s;
+}
+
+/* Cuando la sidebar está colapsada (icon-only), 
+   empuja el contenido y el footer */
+.sidebar--collapsed ~ .main-content,
+.sidebar--collapsed ~ .footer {
+  margin-left: var(--sidebar-width-collapsed);
+}
+
+/* FOOTER */
+.footer {
+  background-color: var(--primary-color);
+  color: #fff;
+  text-align: center;
+  padding: 10px 20px;
+}
+
+/* ===========================
+   MÓVIL (overlay)
+   =========================== */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 56px;
+    --sidebar-width-open: 200px;
+    --sidebar-width-collapsed: 60px; 
+    --sidebar-width-mobile-open: 200px; 
   }
 
-  /* LAYOUT CONTAINER */
-.layout {
-    display: flex;
-    margin-top: var(--header-height); /* para no tapar el contenido con el header */
+  /* Ajusta layout */
+  .layout {
+    margin-top: var(--header-height);
     min-height: calc(100vh - var(--header-height));
-    background-color: var(--bg-color);
   }
-  
- /* Cuando el sidebar está colapsado */
-.sidebar-collapsed .sidebar {
-    width: var(--sidebar-width-collapsed);
-  }
-  
-  /* SIDEBAR (fijo a la izquierda) */
+
+  /* SIDEBAR en móvil overlay */
   .sidebar {
-    position: fixed;
     top: var(--header-height);
-    left: 0;
-    height: calc(100vh - var(--header-height));
-    background-color: var(--primary-color);
-    color: #fff;
-    overflow-y: auto;
-    transition: width 0.3s ease;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    width: 0;
+    transform: translateX(-100%);
+    z-index: 9999;
   }
-  
-  /* MAIN CONTENT */
-  .main-content {
-    flex: 1;
-    padding: 20px;
-    /* Desplazar el contenido a la derecha para no quedar debajo del sidebar */
-    margin-left: var(--sidebar-width-open);
-    transition: margin-left 0.3s;
+  .sidebar--mobile-visible {
+    transform: translateX(0);
+    width: var(--sidebar-width-mobile-open);
   }
-  
-  /* Ajuste cuando está colapsado */
-  .sidebar-collapsed .main-content {
-    margin-left: var(--sidebar-width-collapsed);
-  }
-  
-  /* FOOTER */
+
+  /* MAIN CONTENT y FOOTER en móvil usan todo el ancho */
+  .main-content,
   .footer {
-    background-color: var(--primary-color);
-    color: #fff;
-    text-align: center;
-    padding: 10px 20px;
+    margin-left: 0;
   }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    :root {
-      --sidebar-width-open: 200px;
-      --sidebar-width-collapsed: 60px;
-    }
-  } 
+}

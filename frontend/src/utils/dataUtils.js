@@ -4,6 +4,17 @@ function extraerMes(fechaString) {
   const fecha = new Date(fechaString);
   return fecha.toLocaleString("es-ES", { month: "long" }).toLowerCase();
 }
+// Función que convierte segundos a la unidad deseada
+export function convertirSegundos(segundos, unidadTiempo = "minutos") {
+  if (unidadTiempo === "minutos") {
+    // Convierte a minutos y redondea a entero
+    return Math.round(segundos / 60);
+  } else if (unidadTiempo === "horas") {
+    // Primero convierte a minutos y redondea, luego a horas con 2 decimales
+    return parseFloat((segundos / 3600).toFixed(2));
+  }
+}
+
 
 export function agruparDataPorMes(data, yearSeleccionado, unidadTiempo = "minutos") {
   const map = {};
@@ -13,35 +24,47 @@ export function agruparDataPorMes(data, yearSeleccionado, unidadTiempo = "minuto
     const anio = fecha.getFullYear().toString();
     if (yearSeleccionado && anio !== yearSeleccionado) return;
     const mes = extraerMes(item.event_date);
-    const valor = unidadTiempo === "minutos"
-      ? Math.round(item.active_seconds / 60)
-      : Math.round(item.active_seconds / 3600);
+    // Utiliza la función de conversión para obtener el valor
+    const valor = convertirSegundos(item.active_seconds, unidadTiempo);
     if (!map[mes]) {
       map[mes] = { mes, total: 0 };
     }
     map[mes].total += valor;
   });
-  const ordenMeses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-  return Object.values(map).sort((a, b) => ordenMeses.indexOf(a.mes) - ordenMeses.indexOf(b.mes));
+  const ordenMeses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  
+  // Aplicar redondeo final a 2 decimales si la unidad es "horas"
+  const resultado = Object.values(map).map(item => ({
+    ...item,
+    total: unidadTiempo === "horas" ? parseFloat(item.total.toFixed(2)) : item.total
+  }));
+  
+  return resultado.sort((a, b) => ordenMeses.indexOf(a.mes) - ordenMeses.indexOf(b.mes));
 }
+
+
 
 export function agruparDataPorAnio(data, yearSeleccionado, unidadTiempo = "minutos") {
   const map = {};
-  data.forEach((item) => {
+  data.forEach(item => {
     if (!item.event_date) return;
     const fecha = new Date(item.event_date);
     const anio = fecha.getFullYear().toString();
     if (yearSeleccionado && anio !== yearSeleccionado) return;
-    const valor = unidadTiempo === "minutos"
-      ? Math.round(item.active_seconds / 60)
-      : Math.round(item.active_seconds / 3600);
+    const valor = convertirSegundos(item.active_seconds, unidadTiempo);
     if (!map[anio]) {
       map[anio] = { mes: anio, total: 0 };
     }
     map[anio].total += valor;
   });
-  return Object.values(map).sort((a, b) => a.mes.localeCompare(b.mes));
+  const resultado = Object.values(map).map(item => ({
+    ...item,
+    total: unidadTiempo === "horas" ? parseFloat(item.total.toFixed(2)) : item.total
+  }));
+  return resultado.sort((a, b) => a.mes.localeCompare(b.mes));
 }
+
+
 
 export function agruparAccesoPorRango(data, yearSeleccionado) {
   const map = {};
@@ -104,6 +127,18 @@ export function obtenerDocentesFiltrados(data, cursoSeleccionado) {
   }
   return Array.from(new Set(docentes));
 }
+export function obtenerEstudiantesFiltrados(data, cursoSeleccionado) {
+  let estudiantes;
+  if (cursoSeleccionado) {
+    estudiantes = data
+      .filter(d => d.course_fullname === cursoSeleccionado)
+      .map(d => `${d.user_fname} ${d.user_sname}`);
+  } else {
+    estudiantes = data.map(d => `${d.user_fname} ${d.user_sname}`);
+  }
+  return Array.from(new Set(estudiantes));
+}
+
 
 export function obtenerCursosSinDocente(data) {
   return Array.from(new Set(data.map((d) => d.course_fullname)));

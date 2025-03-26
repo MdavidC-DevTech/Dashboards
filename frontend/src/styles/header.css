@@ -1,0 +1,82 @@
+/* header.css */
+
+:root {
+    --header-height: 64px;
+    --primary-color: #003366;
+    --font-family: 'Arial, sans-serif';
+  }
+  
+  /* Contenedor principal del header */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background-color: var(--primary-color);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 1000;
+  }
+  
+  /* Sección izquierda: hamburguesa + logo */
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  /* Sección central: título */
+  .header-center {
+    flex: 1; /* Ocupará el espacio intermedio */
+    display: flex;
+    justify-content: center; /* Centra el título */
+    align-items: center;
+  }
+  
+  /* Sección derecha: ícono de usuario o menú */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  /* Botón hamburguesa */
+  .menu-button {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  
+  /* Logo */
+  .header-logo {
+    height: 40px;
+  }
+  
+  /* Título */
+  .header-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  /* Ajustes para pantallas pequeñas */
+  @media (max-width: 768px) {
+    :root {
+      --header-height: 56px; /* header más bajo en móvil */
+    }
+  
+    .header {
+      height: var(--header-height);
+      padding: 0 5px;
+    }
+  
+    .header-title {
+      font-size: 18px;
+    }
+  }
+  

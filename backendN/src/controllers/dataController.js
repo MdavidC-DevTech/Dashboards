@@ -3,22 +3,27 @@ const pool = require('../config/db');
 
 async function getDatos(req, res) {
   try {
-    // 1) Del token, obten la info del usuario
+    // 1) Del token obtenemos role y categoryId (definidos en fakeUsers)
     const { role, categoryId } = req.user || {};
 
-    // 2) Condición para filtrar
-    //    Si es 'teacher' o 'student', filtras por cat.id = categoryId
-    //    Si es 'manager' (o algún rol “admin”), devuelves todo.
-    let whereCategory = '';
+    // 2) Obtenemos el path completo de la categoría a partir del categoryId
+    let categoryPath = '';
     if (role === 'teacher' || role === 'student') {
-      // Filtrar por la categoría del user
-      whereCategory = `AND cat.id = ${categoryId}`;
+      const [catRows] = await pool.query(
+        "SELECT path FROM eva_course_categories WHERE id = ?",
+        [categoryId]
+      );
+      if (catRows.length > 0) {
+        categoryPath = catRows[0].path; // Ejemplo: '/4/5/240/303/305/298/300'
+      } else {
+        throw new Error("No se encontró la categoría del usuario.");
+      }
+    } else {
+      // Para otros roles, sin restricción
+      categoryPath = '%';
     }
-    
-    // [OPCIONAL] Quitar la parte que limitaba a 7 días
-    // antes tenías: e.timecreated > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY))
-    // Si quieres TODOS los registros, quita esa condición.
 
+    // 3) Consulta optimizada: se filtra desde los CTE usando el categoryPath obtenido
     const sql = `
 WITH ordered_events AS (
     SELECT
@@ -27,33 +32,41 @@ WITH ordered_events AS (
         DATE(CONVERT_TZ(FROM_UNIXTIME(e.timecreated), '+00:00', '-05:00')) AS event_date,
         CONVERT_TZ(FROM_UNIXTIME(e.timecreated), '+00:00', '-05:00') AS created_date,
         e.contextinstanceid,
-        ROW_NUMBER() OVER (PARTITION BY e.userid ORDER BY e.timecreated) AS rn
-    FROM
-        eva_logstore_standard_log e
-        JOIN eva_user u ON e.userid = u.id
-        -- Quitar LIMITES de fecha si quieres el historial completo
+        ROW_NUMBER() OVER (PARTITION BY e.userid, e.contextinstanceid ORDER BY e.timecreated) AS rn
+    FROM eva_logstore_standard_log e
+    WHERE e.contextinstanceid IN (
+        SELECT c.id
+        FROM eva_course_categories cc
+        JOIN eva_course c ON c.category = cc.id
+        WHERE cc.path LIKE CONCAT(?, '%')
+        GROUP BY c.id
+    )
 ),
 differences AS (
     SELECT
-        a.userid,
-        a.event_date,
-        a.contextinstanceid,
-        a.created_date AS current_event,
+        oe.userid,
+        oe.event_date,
+        oe.contextinstanceid,
+        oe.created_date AS current_event,
         COALESCE(
-            TIMESTAMPDIFF(
-                SECOND,
-                LAG(a.created_date) OVER (PARTITION BY a.userid, a.contextinstanceid ORDER BY a.rn),
-                a.created_date
+            TIMESTAMPDIFF(SECOND,
+                LAG(oe.created_date) OVER (PARTITION BY oe.userid, oe.contextinstanceid ORDER BY oe.rn),
+                oe.created_date
             ),
             0
         ) AS diff
-    FROM ordered_events a
+    FROM ordered_events oe
 ),
 context_info AS (
-    SELECT
-        id AS contextid,
-        instanceid AS courseid
+    SELECT id AS contextid, instanceid AS courseid
     FROM eva_context
+    WHERE instanceid IN (
+        SELECT c.id
+        FROM eva_course_categories cc
+        JOIN eva_course c ON c.category = cc.id
+        WHERE cc.path LIKE CONCAT(?, '%')
+        GROUP BY c.id
+    )
 )
 SELECT
     d.userid,
@@ -68,9 +81,7 @@ SELECT
     cat.name AS category_name,
     cat.path AS category_path,
     d.event_date,
-    SUM(
-        CASE WHEN d.diff BETWEEN 10 AND 3600 THEN d.diff ELSE 0 END
-    ) AS active_seconds
+    SUM(CASE WHEN d.diff BETWEEN 10 AND 3600 THEN d.diff ELSE 0 END) AS active_seconds
 FROM differences d
 JOIN eva_user u ON d.userid = u.id
 JOIN context_info ci ON d.contextinstanceid = ci.courseid
@@ -78,28 +89,15 @@ JOIN eva_course c ON ci.courseid = c.id
 JOIN eva_course_categories cat ON c.category = cat.id
 JOIN eva_role_assignments ra ON d.userid = ra.userid AND ci.contextid = ra.contextid
 JOIN eva_role r ON ra.roleid = r.id
-WHERE 1=1
-  ${whereCategory}  -- Filtra según el colegio
 GROUP BY
-  d.userid,
-  user_fname,
-  user_sname,
-  user_roleid,
-  role_shortname,
-  ci.courseid,
-  c.fullname,
-  c.shortname,
-  cat.id,
-  cat.name,
-  cat.path,
-  d.event_date,
-  d.contextinstanceid
-ORDER BY
-  d.userid,
-  d.event_date
+    d.userid, u.firstname, u.lastname, ra.roleid, r.shortname,
+    ci.courseid, c.fullname, c.shortname, cat.id, cat.name, cat.path,
+    d.event_date, d.contextinstanceid
+ORDER BY d.userid, d.event_date;
     `;
 
-    const [rows] = await pool.query(sql);
+    // Se pasan el categoryPath para los dos subqueries
+    const [rows] = await pool.query(sql, [categoryPath, categoryPath]);
     res.json(rows);
 
   } catch (error) {
@@ -108,6 +106,4 @@ ORDER BY
   }
 }
 
-module.exports = {
-  getDatos
-};
+module.exports = { getDatos };

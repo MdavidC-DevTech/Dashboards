@@ -8,12 +8,17 @@ import "../styles/pages.css"; // Usamos la hoja de estilos global para páginas
 import { FaClipboardList, FaChartBar } from "react-icons/fa";
 import Loader from "../components/Loader";
 import useInternalLoader from "../hooks/useInternalLoader";
+//import { AuthContext } from "../context/AuthContext";
+import { limpiarNombreColegio } from "../utils/stringUtils";
+
 
 function ConteoAccesoPage() {
   // Extraemos data, loadingData, errorData y loadData del DataContext
-  const { data, loadingData, errorData, loadData } = useContext(DataContext);
+  const { data, loadingData, errorData, loadData, collegeName } = useContext(DataContext);
   // Usamos el hook personalizado para operaciones internas
   const { internalLoading, runWithLoader } = useInternalLoader();
+  //para sacar datos del usuario logeado
+  // const { currentUser } = useContext(AuthContext);
 
   // Estados para filtros
   const [rolSeleccionado, setRolSeleccionado] = useState("todos");
@@ -23,6 +28,10 @@ function ConteoAccesoPage() {
   // Estado para opciones y data agrupada
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
   const [dataAgrupada, setDataAgrupada] = useState([]);
+
+  // Aplica la transformación al nombre del colegio
+  const nombreColegioLimpio = collegeName ? limpiarNombreColegio(collegeName) : "Mi Colegio";
+
 
   // Actualizar opciones de cursos basados en la data
   useEffect(() => {
@@ -86,7 +95,7 @@ function ConteoAccesoPage() {
 
   return (
     <div className="page-container">
-      <h1 className="page-title">Conteo de Acceso</h1>
+      <h1 className="page-title">{nombreColegioLimpio} (Conteo de Acceso)</h1>
 
       {/* Tarjeta de Filtros */}
       <div className="page-card">

@@ -5,11 +5,17 @@
   }
   
   .page-title {
-    font-size: 1.5rem;
-    color: #003366;
-    margin-bottom: 20px;
+    font-size: 1.8rem;
     text-align: center;
-    font-family: 'Poppins', sans-serif; /* o la que uses */
+    margin-bottom: 20px;
+    font-weight: bold;
+    /* Ajusta colores, etc. */
+  }
+  
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.4rem;
+    }
   }
   
   .page-card {

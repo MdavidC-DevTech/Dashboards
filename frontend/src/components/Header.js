@@ -2,36 +2,34 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { FaBars } from "react-icons/fa";
+
 import logo from "../img/logo.png";
-import { useNavigate } from "react-router-dom";
+import UserMenu from "./UserMenu"; // Opcional, para icono/menú de usuario
+import "../styles/header.css";
 
 function Header({ onMenuClick }) {
-  const { currentUser, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { currentUser } = useContext(AuthContext);
+ 
 
-  const handleLogout = () => {
-    logout();
-    // Redirige al login después de cerrar sesión
-    navigate("/login");
-  };
   return (
     <header className="header">
-      <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-        <button onClick={onMenuClick} style={{ background: "transparent", border: "none", color: "#fff", fontSize: "24px", cursor: "pointer" }}>
+      {/* Sección izquierda: botón hamburguesa y logo */}
+      <div className="header-left">
+        <button className="menu-button" onClick={onMenuClick}>
           <FaBars />
         </button>
-        <img src={logo} alt="Logo" style={{ height: "40px" }} />
-        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>DASHBOARD</h1>
+        <img src={logo} alt="Logo" className="header-logo" />
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        {currentUser && (
-          <span>
-            {currentUser.full_name} ({currentUser.role}){currentUser.collegeName && ` - ${currentUser.collegeName}`}
-          </span>
-        )}
-        <button onClick={handleLogout} style={{ background: "#ff4d4d", border: "none", color: "#fff", padding: "8px 12px", borderRadius: "5px", cursor: "pointer" }}>
-          Cerrar sesión
-        </button>
+
+      {/* Sección central: título */}
+      <div className="header-center">
+        <h1 className="header-title">DASHBOARD</h1>
+      </div>
+
+      {/* Sección derecha: ícono de usuario, logout, etc. */}
+      <div className="header-right">
+        {/* Aquí puedes usar un UserMenu o un simple botón */}
+        <UserMenu currentUser={currentUser} />
       </div>
     </header>
   );

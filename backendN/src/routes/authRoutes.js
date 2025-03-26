@@ -18,7 +18,7 @@ router.get('/users/me', authMiddleware, (req, res) => {
   return res.json({
     user: {
       username: userData.username,
-      full_name: userData.full_name,
+      full_name: userData.full_name+userData.email,
       email: userData.email,
       role: userData.role,
       categoryId: userData.categoryId,

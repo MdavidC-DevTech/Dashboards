@@ -10,6 +10,7 @@ export const DataProvider = ({ children }) => {
 
   // Estados locales
   const [data, setData] = useState([]);
+  const [collegeName, setCollegeName] = useState("Mi Colegio");
   const [loadingData, setLoadingData] = useState(true);
   const [errorData, setErrorData] = useState(null);
 
@@ -26,6 +27,12 @@ export const DataProvider = ({ children }) => {
       setErrorData(null);
       const result = await fetchDatos();
       setData(result);
+      // Extrae el nombre del colegio del primer registro (si existe)
+      if (result && result.length > 0 && result[0].category_name) {
+        setCollegeName(result[0].category_name);
+      } else {
+        setCollegeName("Mi Colegio");
+      }
     } catch (err) {
       console.error("Error al cargar datos:", err.response || err);
       setErrorData(err);
@@ -40,7 +47,7 @@ export const DataProvider = ({ children }) => {
   }, [loadData]);
 
   return (
-    <DataContext.Provider value={{ data, loadingData, errorData, loadData }}>
+    <DataContext.Provider value={{ data, loadingData, errorData, loadData,collegeName  }}>
       {children}
     </DataContext.Provider>
   );
