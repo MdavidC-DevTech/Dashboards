@@ -51,7 +51,7 @@ function RankingBarrasEstudiantes({ data }) {
     <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
       {/* Top 10 */}
       <div style={{ flex: 1, minWidth: "400px" }}>
-        <h2 style={{ textAlign: "center" }}>Top 10 Estudiantes</h2>
+        <h2 style={{ textAlign: "center" }}>Top 10 Estudiantes mas activos</h2>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
             data={top10}
@@ -70,7 +70,7 @@ function RankingBarrasEstudiantes({ data }) {
       {/* Bottom 10 */}
       {bottom10.length > 0 && (
         <div style={{ flex: 1, minWidth: "400px" }}>
-          <h2 style={{ textAlign: "center" }}>Bottom 10 Estudiantes</h2>
+          <h2 style={{ textAlign: "center" }}>Bottom 10 Estudiantes menos activos</h2>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart
               data={bottom10}

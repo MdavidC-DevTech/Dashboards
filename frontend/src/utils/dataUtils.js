@@ -101,6 +101,59 @@ export function agruparAccesoPorRango(data, yearSeleccionado) {
   return Object.values(map).sort((a, b) => ordenMeses.indexOf(a.mes) - ordenMeses.indexOf(b.mes));
 }
 
+
+// agruparDataPorDia: agrupa la data por día (dd-mm-yyyy) y suma los valores
+export function agruparDataPorDia(data, yearSeleccionado, unidadTiempo = "minutos") {
+  const map = {};
+  data.forEach(item => {
+    if (!item.event_date) return;
+
+    const fecha = new Date(item.event_date);
+    const anio = fecha.getFullYear().toString();
+    if (yearSeleccionado && anio !== yearSeleccionado) return;
+
+    // Formato de día, por ejemplo dd-mm-yyyy
+    // Nota: Puedes usar toLocaleDateString u otra librería para formatear
+    const dia = fecha.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }); 
+    // Conviertes los active_seconds
+    const valor = convertirSegundos(item.active_seconds, unidadTiempo);
+
+    if (!map[dia]) {
+      map[dia] = { mes: dia, total: 0 }; 
+      // Usamos "mes" como key en la gráfica, 
+      // pero en realidad es "día" (podrías llamarlo "dia" en lugar de "mes")
+    }
+    map[dia].total += valor;
+  });
+
+  // Convertimos el objeto a array
+  const resultado = Object.values(map);
+
+  // Ordenamos por fecha (opcional)
+  // Cada item.mes es algo como "31/01/2024", parseamos y ordenamos
+  resultado.sort((a, b) => {
+    const [diaA, mesA, anioA] = a.mes.split("/");
+    const [diaB, mesB, anioB] = b.mes.split("/");
+    const fechaA = new Date(+anioA, +mesA - 1, +diaA);
+    const fechaB = new Date(+anioB, +mesB - 1, +diaB);
+    return fechaA - fechaB;
+  });
+
+  // Redondeo final si es horas
+  if (unidadTiempo === "horas") {
+    resultado.forEach(item => {
+      item.total = parseFloat(item.total.toFixed(2));
+    });
+  }
+
+  return resultado;
+}
+
+
 // Funciones para docentes y cursos se mantienen según lo ajustado:
 export function obtenerCursosFiltrados(data, docenteSeleccionado) {
   if (docenteSeleccionado) {

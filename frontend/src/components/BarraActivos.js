@@ -30,12 +30,13 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-function BarraActivos({ data, unidadTiempo }) {
-  const meta = unidadTiempo === "minutos" ? 240 : 4;
+function BarraActivos({ data, unidadTiempo, meta }) {
+  // meta viene como prop, en lugar de calcularla localmente
+  // data es un array con objetos { mes, total } (o { anio, total })
 
   return (
     <div style={{ marginTop: "20px" }}>
-      <h2>Actividad en {unidadTiempo === "minutos" ? "Minutos" : "Horas"}</h2>
+      <h2>Actividad en {unidadTiempo === "horas" ? "Horas" : "Minutos"}</h2>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -43,10 +44,16 @@ function BarraActivos({ data, unidadTiempo }) {
           <YAxis />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
+          {/* Usamos meta aquí */}
           <ReferenceLine
             y={meta}
             stroke="red"
-            label={{ value: `Meta: ${meta} ${unidadTiempo}`, position: "insideTopRight", fill: "red" }}
+            label={{ 
+              value: `Meta: ${meta} ${unidadTiempo}`, 
+              position: "insideTopRight", 
+              fill: "red" 
+            }}
+            strokeDasharray="3 3"
           />
           <Bar dataKey="total" fill="#8884d8" name={`Total ${unidadTiempo}`}>
             <LabelList dataKey="total" position="top" />
