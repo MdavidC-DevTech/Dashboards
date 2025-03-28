@@ -1,5 +1,5 @@
 // src/components/RankingBarrasEstudiantes.js
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -10,14 +10,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Tooltip personalizado para mostrar nombre, curso y minutos
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
-    const { name, course, minutos } = payload[0].payload;
+    const { name, minutos } = payload[0].payload;
     return (
       <div style={{ backgroundColor: "#fff", border: "1px solid #ccc", padding: "5px" }}>
         <p><strong>Estudiante:</strong> {name}</p>
-        <p><strong>Curso:</strong> {course || "N/A"}</p>
         <p><strong>Minutos:</strong> {minutos}</p>
       </div>
     );
@@ -25,33 +23,51 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-function RankingBarrasEstudiantes({ data }) {
-  // data: [{ user_fname, user_sname, active_seconds, course_fullname }, ...]
+/**
+ * data: array con { user_fname, user_sname, active_seconds, ... }
+ * onRankingDataChange: callback que le pasa al padre la data final (TOP/BOTTOM).
+ */
+function RankingBarrasEstudiantes({ data, onRankingDataChange }) {
+  // 1) Ordenamos data de mayor a menor
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => b.active_seconds - a.active_seconds);
+  }, [data]);
 
-  // Ordenamos la data de mayor a menor por active_seconds
-  const sortedData = [...data].sort((a, b) => b.active_seconds - a.active_seconds);
+  // 2) Mapeamos a la forma que usa el gráfico (name, minutos)
+  const fullData = useMemo(() => {
+    return sortedData.map((item) => ({
+      name: `${item.user_fname} ${item.user_sname}`,
+      minutos: Math.round(item.active_seconds / 60),
+    }));
+  }, [sortedData]);
 
-  // Creamos un array con las propiedades que nos interesan para el gráfico
-  const fullData = sortedData.map((item) => ({
-    name: `${item.user_fname} ${item.user_sname}`,
-    course: item.course_fullname, // <<--- Para el tooltip
-    minutos: Math.round(item.active_seconds / 60),
-  }));
+  // 3) Top 10
+  const top10 = useMemo(() => fullData.slice(0, 10), [fullData]);
+  // 4) Bottom 10
+  const bottomTail = useMemo(() => fullData.slice(10), [fullData]);
+  const bottom10 = useMemo(() => bottomTail.slice(-10).reverse(), [bottomTail]);
 
-  // Top 10
-  const top10 = fullData.slice(0, 10);
+  // 5) Unificamos top y bottom en un solo array con rankingType
+  //    Use useMemo so we only compute once per change, not every render
+  const finalRanking = useMemo(() => {
+    return [
+      ...top10.map((obj) => ({ ...obj, rankingType: "TOP" })),
+      ...bottom10.map((obj) => ({ ...obj, rankingType: "BOTTOM" })),
+    ];
+  }, [top10, bottom10]);
 
-  // Bottom 10 (si hay más de 10)
-  // Excluimos el top 10 con slice(10), luego tomamos los últimos 10 y los invertimos
-  const bottom10 = fullData.length > 10
-    ? fullData.slice(10).slice(-10).reverse()
-    : [];
+  // 6) Notificar al padre una sola vez cuando finalRanking cambie
+  useEffect(() => {
+    if (onRankingDataChange) {
+      onRankingDataChange(finalRanking);
+    }
+  }, [finalRanking, onRankingDataChange]);
 
   return (
     <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
       {/* Top 10 */}
       <div style={{ flex: 1, minWidth: "400px" }}>
-        <h2 style={{ textAlign: "center" }}>Top 10 Estudiantes mas activos</h2>
+        <h2 style={{ textAlign: "center" }}>Top 10 Estudiantes más activos</h2>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
             data={top10}
@@ -67,7 +83,7 @@ function RankingBarrasEstudiantes({ data }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Bottom 10 */}
+      {/* Bottom 10 (si aplica) */}
       {bottom10.length > 0 && (
         <div style={{ flex: 1, minWidth: "400px" }}>
           <h2 style={{ textAlign: "center" }}>Bottom 10 Estudiantes menos activos</h2>

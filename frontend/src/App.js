@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,9 +6,8 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import "./styles/App.css"; // Importa tus estilos globales (layout, variables, etc.)
+import "./styles/App.css";
 
-// Componentes y páginas
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
@@ -16,125 +15,119 @@ import LoginPage from "./pages/LoginPage";
 import ProfesoresPage from "./pages/ProfesoresPage";
 import EstudiantesPage from "./pages/EstudiantesPage";
 import ConteoAccesoPage from "./pages/ConteoAccesoPage";
+import Loader from "./components/Loader";
+import { TransitionProvider } from "./context/TransitionContext";
 
-// Contextos
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import { DataProvider, DataContext } from "./context/DataContext";
 
-// Componente Loader
-import Loader from "./components/Loader";
+import NProgress from "nprogress";
+import "nprogress/nprogress.css";
 
-// Protege las rutas si no hay token
+NProgress.configure({ showSpinner: false });
+
 const ProtectedRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
   return token ? children : <Navigate to="/login" />;
 };
 
-// Layout principal (header + sidebar + main + footer)
 const MainLayout = ({ children }) => {
   const { currentUser, logout, loadingUser } = React.useContext(AuthContext);
   const { loadingData } = React.useContext(DataContext);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
-  // Mostrar loader si el usuario o la data están cargando
+  // Mientras se cargan el usuario o la data, mostramos Loader
   if (loadingUser || loadingData) {
     return <Loader />;
   }
 
   return (
     <>
-      {/* Header fijo */}
       <Header
         currentUser={currentUser}
         onLogout={logout}
         onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
       />
-
-      {/* Contenedor principal: Sidebar + Main Content */}
-      <div
-        className={`layout ${isSidebarOpen ? "sidebar-open" : "sidebar-collapsed"}`}
-      >
+      <div className={`layout ${isSidebarOpen ? "sidebar-open" : "sidebar-collapsed"}`}>
         <Sidebar isOpen={isSidebarOpen} />
-
-        {/* El contenido principal (pages) */}
-        <main className="main-content">
-          {children}
-        </main>
+        <main className="main-content">{children}</main>
       </div>
-
       <Footer />
     </>
   );
 };
 
-// Rutas que requieren autenticación
-const AppContent = () => {
-  return (
-    <MainLayout>
-      <Routes>
-        <Route
-          path="/profesores"
-          element={
-            <ProtectedRoute>
-              <ProfesoresPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/estudiantes"
-          element={
-            <ProtectedRoute>
-              <EstudiantesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/acceso"
-          element={
-            <ProtectedRoute>
-              <ConteoAccesoPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <ProfesoresPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </MainLayout>
-  );
-};
-
-// Rutas públicas (para el login)
-const PublicRoutes = () => {
-  return (
+const AuthenticatedRoutes = () => (
+  <MainLayout>
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="*" element={<Navigate to="/login" />} />
+      <Route
+        path="/profesores"
+        element={
+          <ProtectedRoute>
+            <ProfesoresPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/estudiantes"
+        element={
+          <ProtectedRoute>
+            <EstudiantesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/acceso"
+        element={
+          <ProtectedRoute>
+            <ConteoAccesoPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <ProfesoresPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
-  );
-};
+  </MainLayout>
+);
 
-// Determina si se muestra login o rutas protegidas
+const PublicRoutes = () => (
+  <Routes>
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="*" element={<Navigate to="/login" />} />
+  </Routes>
+);
+
+// Este componente escucha los cambios de ruta y usa NProgress para mostrar un loader inmediato
 const AppRoutes = () => {
   const location = useLocation();
+
+  useEffect(() => {
+    NProgress.start();
+    return () => {
+      NProgress.done();
+    };
+  }, [location]);
+
   const isLoginPage = location.pathname === "/login";
-  return isLoginPage ? <PublicRoutes /> : <AppContent />;
+  return isLoginPage ? <PublicRoutes /> : <AuthenticatedRoutes />;
 };
 
-// App principal con Providers
 function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <TransitionProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </TransitionProvider>
       </DataProvider>
     </AuthProvider>
   );

@@ -1,39 +1,159 @@
 // src/pages/EstudiantesPage.js
+
 import React, { useContext, useState, useEffect } from "react";
 import { DataContext } from "../context/DataContext";
+import useInternalLoader from "../hooks/useInternalLoader";
 import {
   obtenerCursosFiltrados,
+  obtenerEstudiantesFiltrados,
   agruparDataPorMes,
   agruparDataPorAnio,
   agruparDataPorDia,
-  obtenerEstudiantesFiltrados,
 } from "../utils/dataUtils";
-import SearchableSelect from "../components/SearchableSelect";
-import BarraActivos from "../components/BarraActivos";
-import "../styles/pages.css";
-import { FaUserGraduate, FaChartBar, FaClock } from "react-icons/fa";
-import Loader from "../components/Loader";
+import { calcularMeta } from "../utils/calcularMeta";
 import { limpiarNombreColegio } from "../utils/stringUtils";
+
+import BarraActivos from "../components/BarraActivos";
 import PieCursos from "../components/PieCursos";
 import RankingBarrasEstudiantes from "../components/RankingBarrasEstudiantes";
-import { calcularMeta } from "../utils/calcularMeta";
+import SearchableSelect from "../components/SearchableSelect";
+import ExportCSVButton from "../components/ExportCSVButton";
+import Loader from "../components/Loader";
 
-// Función para obtener el rango de la semana actual (por defecto)
+import { FaUserGraduate, FaChartBar, FaClock } from "react-icons/fa";
+import "../styles/pages.css";
+
+// 1) Función para “día” (por defecto, la semana actual)
 const obtenerRangoSemanaActual = () => {
   const hoy = new Date();
-  const diaSemana = hoy.getDay(); // 0 = domingo, 1 = lunes, etc.
+  const diaSemana = hoy.getDay(); // 0 = domingo
   const diffLunes = diaSemana === 0 ? -6 : 1 - diaSemana;
   const diffDomingo = diaSemana === 0 ? 0 : 7 - diaSemana;
+
   const lunes = new Date(hoy);
   lunes.setDate(hoy.getDate() + diffLunes);
+
   const domingo = new Date(hoy);
   domingo.setDate(hoy.getDate() + diffDomingo);
+
   const formatear = (fecha) => fecha.toISOString().split("T")[0];
   return { inicio: formatear(lunes), fin: formatear(domingo) };
 };
 
+/**
+ * @function getUnifiedData
+ * Unifica la data final de:
+ *   - Actividad (barras): dataActividad 
+ *   - Distribución (pie con porcentaje): pieCursosFinal 
+ *   - Ranking (top/bottom): rankingEstudiantesFinal
+ *   - filtros: para poder armar un “descripcion” más descriptivo
+ */
+const getUnifiedData = (dataActividad, pieCursosFinal, rankingEstudiantesFinal, filtros) => {
+  const unified = [];
+
+  // Sección ACTIVIDAD
+  unified.push({
+    seccion: "Actividad",
+    descripcion: `Actividad${filtros.unidadTiempo === "minutos" ? "Minutos" : "Horas"}_${filtros.yearSeleccionado || "Todos"}`,
+    fecha: "",
+    total: "",
+    curso: "",
+    tiempo: "",
+    profesor: "",
+  });
+  unified.push({
+    seccion: "",
+    descripcion: "",
+    fecha: "Fecha",
+    total: "Total",
+    curso: "",
+    tiempo: "",
+    profesor: "",
+  });
+  dataActividad.forEach((item) => {
+    unified.push({
+      seccion: "",
+      descripcion: "",
+      fecha: item.mes, // mes o día
+      total: item.total,
+      curso: "",
+      tiempo: "",
+      profesor: "",
+    });
+  });
+  unified.push({});
+
+  // Sección DISTRIBUCIÓN
+  unified.push({
+    seccion: "Distribución",
+    descripcion: `DistribuciónTiempo_${filtros.yearSeleccionado || "Todos"}_${filtros.cursoSeleccionado || "Todos"}`,
+    fecha: "",
+    total: "",
+    curso: "",
+    tiempo: "",
+    profesor: "",
+  });
+  unified.push({
+    seccion: "",
+    descripcion: "",
+    fecha: "Curso",
+    total: "Minutos",
+    curso: "Porcentaje",
+    tiempo: "",
+    profesor: "",
+  });
+  pieCursosFinal.forEach((item) => {
+    unified.push({
+      seccion: "",
+      descripcion: "",
+      fecha: item.name,     // Nombre del curso
+      total: item.value,    // Minutos
+      curso: `${item.percentage}%`,
+      tiempo: "",
+      profesor: "",
+    });
+  });
+  unified.push({});
+
+  // Sección RANKING
+  unified.push({
+    seccion: "Ranking",
+    descripcion: `RankingEstudiantes_${filtros.yearSeleccionado || "Todos"}_${filtros.cursoSeleccionado || "Todos"}`,
+    fecha: "",
+    total: "",
+    curso: "",
+    tiempo: "",
+    profesor: "",
+  });
+  unified.push({
+    seccion: "",
+    descripcion: "",
+    fecha: "",
+    total: "",
+    curso: "RankingType",
+    tiempo: "Minutos",
+    profesor: "Estudiante",
+  });
+  rankingEstudiantesFinal.forEach((item) => {
+    unified.push({
+      seccion: "",
+      descripcion: "",
+      fecha: "",
+      total: "",
+      curso: item.rankingType,  // "TOP" or "BOTTOM"
+      tiempo: item.minutos,     // Minutos
+      profesor: item.name,      // "Nombre Apellido"
+    });
+  });
+
+  return unified;
+};
+
 const EstudiantesPage = () => {
   const { data, loadingData, errorData, loadData, collegeName } = useContext(DataContext);
+  const { internalLoading, runWithLoader } = useInternalLoader();
+
+  const nombreColegioLimpio = collegeName ? limpiarNombreColegio(collegeName) : "Mi Colegio";
 
   // Filtros
   const [cursoSeleccionado, setCursoSeleccionado] = useState("");
@@ -42,55 +162,53 @@ const EstudiantesPage = () => {
   const [unidadTiempo, setUnidadTiempo] = useState("minutos");
   const [agrupacionModo, setAgrupacionModo] = useState("mes");
 
-  // Estado para el rango de fechas (aplica cuando agrupación es "día")
+  // Rango de fecha si se agrupa por día
   const { inicio: fechaInicioDefault, fin: fechaFinDefault } = obtenerRangoSemanaActual();
   const [fechaInicio, setFechaInicio] = useState(fechaInicioDefault);
   const [fechaFin, setFechaFin] = useState(fechaFinDefault);
 
-  // Opciones para selectores
+  // Opciones (combos)
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
   const [estudiantesDisponibles, setEstudiantesDisponibles] = useState([]);
   const [aniosDisponibles, setAniosDisponibles] = useState([]);
 
-  // Datos agrupados para la gráfica de barras
-  const [dataAgrupada, setDataAgrupada] = useState([]);
-  // Datos para el PieChart
-  const [dataPorCurso, setDataPorCurso] = useState([]);
-  // Data para Ranking (Top 10 y Bottom 10)
-  const [dataRankingEstudiantes, setDataRankingEstudiantes] = useState([]);
+  // Data final para cada sección
+  const [dataActividad, setDataActividad] = useState([]);        // para <BarraActivos>
+  const [dataDistribucion, setDataDistribucion] = useState([]);  // para <PieCursos> (en bruto)
+  const [pieCursosFinal, setPieCursosFinal] = useState([]);      // con % devuelto por <PieCursos>
+  const [dataRanking, setDataRanking] = useState([]);            // en bruto, para <RankingBarrasEstudiantes>
+  const [rankingEstudiantesFinal, setRankingEstudiantesFinal] = useState([]); // top/bottom final
 
-  // Declaramos el estado meta
   const [meta, setMeta] = useState(0);
-  // Manejo de carga interna
-  const [internalLoading, setInternalLoading] = useState(false);
 
-  const nombreColegioLimpio = collegeName ? limpiarNombreColegio(collegeName) : "Mi Colegio";
-
-  // 1. Actualizar opciones de filtros (Cursos, Estudiantes y Años)
+  // 1) Actualizar combos en base a la data
   useEffect(() => {
     if (data && data.length > 0) {
-      const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
-      const cursos = obtenerCursosFiltrados(soloEstudiantes, estudianteSeleccionado);
+      const soloEst = data.filter((d) => d.role_shortname === "student");
+
+      const cursos = obtenerCursosFiltrados(soloEst, estudianteSeleccionado);
       setCursosDisponibles(cursos);
       if (cursoSeleccionado && !cursos.includes(cursoSeleccionado)) {
         setCursoSeleccionado("");
       }
-      const estudiantes = obtenerEstudiantesFiltrados(soloEstudiantes, cursoSeleccionado);
+
+      const estudiantes = obtenerEstudiantesFiltrados(soloEst, cursoSeleccionado);
       setEstudiantesDisponibles(estudiantes);
+
       const anios = Array.from(
-        new Set(soloEstudiantes.map((d) => new Date(d.event_date).getFullYear().toString()))
+        new Set(soloEst.map((d) => new Date(d.event_date).getFullYear().toString()))
       );
       setAniosDisponibles(anios);
     }
   }, [data, cursoSeleccionado, estudianteSeleccionado]);
 
-  // 2. Agrupar data para la gráfica de barras (BarraActivos)
+  // 2) Data Actividad (Barras)
   useEffect(() => {
     if (data && data.length > 0) {
-      setInternalLoading(true);
-      setTimeout(() => {
-        const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
-        let filtrados = soloEstudiantes;
+      runWithLoader(() => {
+        const soloEst = data.filter((d) => d.role_shortname === "student");
+        let filtrados = soloEst;
+
         if (cursoSeleccionado) {
           filtrados = filtrados.filter((d) => d.course_fullname === cursoSeleccionado);
         }
@@ -99,24 +217,26 @@ const EstudiantesPage = () => {
             (d) => `${d.user_fname} ${d.user_sname}` === estudianteSeleccionado
           );
         }
-        // Si agrupación es "día", filtrar por rango de fechas
         if (agrupacionModo === "dia") {
           const inicio = new Date(fechaInicio);
           const fin = new Date(fechaFin);
           filtrados = filtrados.filter((d) => {
-            const fecha = new Date(d.event_date);
-            return fecha >= inicio && fecha <= fin;
+            const f = new Date(d.event_date);
+            return f >= inicio && f <= fin;
           });
         }
-        const agrupados =
-          agrupacionModo === "mes"
-            ? agruparDataPorMes(filtrados, yearSeleccionado, unidadTiempo)
-            : agrupacionModo === "anio"
-              ? agruparDataPorAnio(filtrados, yearSeleccionado, unidadTiempo)
-              : agruparDataPorDia(filtrados, yearSeleccionado, unidadTiempo);
-        setDataAgrupada(agrupados);
-        setInternalLoading(false);
-      }, 0);
+
+        let agrupados = [];
+        if (agrupacionModo === "mes") {
+          agrupados = agruparDataPorMes(filtrados, yearSeleccionado, unidadTiempo);
+        } else if (agrupacionModo === "anio") {
+          agrupados = agruparDataPorAnio(filtrados, yearSeleccionado, unidadTiempo);
+        } else {
+          agrupados = agruparDataPorDia(filtrados, yearSeleccionado, unidadTiempo);
+        }
+
+        setDataActividad(agrupados);
+      });
     }
   }, [
     data,
@@ -127,13 +247,15 @@ const EstudiantesPage = () => {
     agrupacionModo,
     fechaInicio,
     fechaFin,
+    runWithLoader,
   ]);
 
-  // 3. Agrupar datos para el PieChart (por curso)
+  // 3) Data Distribución (en bruto)
   useEffect(() => {
     if (data && data.length > 0) {
-      const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
-      let filtrados = soloEstudiantes;
+      const soloEst = data.filter((d) => d.role_shortname === "student");
+      let filtrados = soloEst;
+
       if (yearSeleccionado) {
         filtrados = filtrados.filter(
           (d) => new Date(d.event_date).getFullYear().toString() === yearSeleccionado
@@ -147,28 +269,29 @@ const EstudiantesPage = () => {
           (d) => `${d.user_fname} ${d.user_sname}` === estudianteSeleccionado
         );
       }
-      const cursosMap = {};
+
+      const map = {};
       filtrados.forEach((d) => {
-        if (!cursosMap[d.course_fullname]) {
-          cursosMap[d.course_fullname] = 0;
+        if (!map[d.course_fullname]) {
+          map[d.course_fullname] = 0;
         }
-        cursosMap[d.course_fullname] += Number(d.active_seconds);
+        map[d.course_fullname] += Number(d.active_seconds);
       });
-      const dataAgrupadaCursos = Object.entries(cursosMap).map(
-        ([course_fullname, active_seconds]) => ({
-          course_fullname,
-          active_seconds,
-        })
-      );
-      setDataPorCurso(dataAgrupadaCursos);
+
+      const distArr = Object.entries(map).map(([course_fullname, active_seconds]) => ({
+        course_fullname,
+        active_seconds,
+      }));
+      setDataDistribucion(distArr);
     }
   }, [data, cursoSeleccionado, estudianteSeleccionado, yearSeleccionado]);
 
-  // 4. Data para Ranking (Top 10 / Bottom 10), sin aplicar el filtro de estudiante
+  // 4) Data Ranking (en bruto)
   useEffect(() => {
     if (data && data.length > 0) {
-      const soloEstudiantes = data.filter((d) => d.role_shortname === "student");
-      let filtrados = soloEstudiantes;
+      const soloEst = data.filter((d) => d.role_shortname === "student");
+      let filtrados = soloEst;
+
       if (yearSeleccionado) {
         filtrados = filtrados.filter(
           (d) => new Date(d.event_date).getFullYear().toString() === yearSeleccionado
@@ -177,29 +300,14 @@ const EstudiantesPage = () => {
       if (cursoSeleccionado) {
         filtrados = filtrados.filter((d) => d.course_fullname === cursoSeleccionado);
       }
-      const rankingMap = {};
-      filtrados.forEach((d) => {
-        const nombreEst = `${d.user_fname} ${d.user_sname}`;
-        if (!rankingMap[nombreEst]) {
-          rankingMap[nombreEst] = {
-            user_fname: d.user_fname,
-            user_sname: d.user_sname,
-            active_seconds: 0,
-            course_fullname: d.course_fullname,
-          };
-        }
-        rankingMap[nombreEst].active_seconds += Number(d.active_seconds);
-      });
-      const rankingArr = Object.values(rankingMap);
-      setDataRankingEstudiantes(rankingArr);
+      // Not filtering by "estudianteSeleccionado" because the ranking ignores it
+      setDataRanking(filtrados);
     }
   }, [data, yearSeleccionado, cursoSeleccionado]);
 
-  // 5. Recalcular la meta según los filtros
+  // 5) Calculamos la meta
   useEffect(() => {
-    // "hayFiltros" = true si se ha seleccionado curso, estudiante o año
-    const hayFiltros = !!(cursoSeleccionado || estudianteSeleccionado || yearSeleccionado);
-    // Calcula la meta (según tu función calcularMeta)
+    const hayFiltros = Boolean(cursoSeleccionado || estudianteSeleccionado || yearSeleccionado);
     const nuevaMeta = calcularMeta({
       agrupacionModo,
       unidadTiempo,
@@ -209,6 +317,30 @@ const EstudiantesPage = () => {
     setMeta(nuevaMeta);
   }, [agrupacionModo, unidadTiempo, cursoSeleccionado, estudianteSeleccionado, yearSeleccionado]);
 
+  // 6) Callbacks para Pie y Ranking
+
+
+
+
+  // 7) Unificamos la data para el CSV
+  const filtros = {
+    unidadTiempo,
+    yearSeleccionado,
+    cursoSeleccionado,
+  };
+  const unifiedData = getUnifiedData(dataActividad, pieCursosFinal, rankingEstudiantesFinal, filtros);
+
+  const unifiedHeaders = [
+    { label: "Sección", key: "seccion" },
+    { label: "Descripción", key: "descripcion" },
+    { label: "Fecha", key: "fecha" },
+    { label: "Total", key: "total" },
+    { label: "Curso", key: "curso" },
+    { label: "Tiempo", key: "tiempo" },
+    { label: "Profesor", key: "profesor" }, // para estudiantes => "Estudiante"
+  ];
+
+  // Manejo de carga y errores
   if (loadingData) {
     return (
       <div className="loading-container">
@@ -235,6 +367,16 @@ const EstudiantesPage = () => {
   return (
     <div className="page-container">
       <h1 className="page-title">{nombreColegioLimpio} (Estudiantes)</h1>
+
+      {/* Botón para exportar CSV unificado */}
+      <div style={{ textAlign: "center", marginBottom: 20 }}>
+        <ExportCSVButton
+          data={unifiedData}
+          filename="reporte_estudiantes.csv"
+          headers={unifiedHeaders}
+          separator=";"
+        />
+      </div>
 
       {/* Tarjeta de Filtros */}
       <div className="page-card">
@@ -292,7 +434,7 @@ const EstudiantesPage = () => {
               </div>
             </div>
 
-            {/* Si agrupación no es "día", mostrar filtro de Año */}
+            {/* Año (solo si no es “dia”) */}
             {agrupacionModo !== "dia" && (
               <div className="filter-item">
                 <SearchableSelect
@@ -324,7 +466,8 @@ const EstudiantesPage = () => {
               />
             </div>
           </div>
-          {/* Si agrupación es "día", mostrar selectores de fecha */}
+
+          {/* Si es “dia”, mostrar rango de fechas */}
           {agrupacionModo === "dia" && (
             <div className="filter-group">
               <div className="filter-item">
@@ -348,36 +491,42 @@ const EstudiantesPage = () => {
         </div>
       </div>
 
-      {/* Tarjeta de Gráfica de Barras */}
+      {/* Tarjeta Actividad */}
       <div className="page-card">
         <div className="page-card-header">
           <FaChartBar />
           <span>Actividad en {unidadTiempo === "horas" ? "Horas" : "Minutos"}</span>
         </div>
         <div className="page-card-body">
-          <BarraActivos data={dataAgrupada} unidadTiempo={unidadTiempo} meta={meta} />
+          <BarraActivos data={dataActividad} unidadTiempo={unidadTiempo} meta={meta} />
         </div>
       </div>
 
-      {/* Tarjeta con PieCursos */}
+      {/* Tarjeta Distribución */}
       <div className="page-card">
         <div className="page-card-header">
           <FaChartBar />
           <span>Distribución del tiempo por curso (Estudiantes)</span>
         </div>
         <div className="page-card-body">
-          <PieCursos data={dataPorCurso} />
+          <PieCursos
+            data={dataDistribucion}
+            onPieDataChange={setPieCursosFinal}
+          />
         </div>
       </div>
 
-      {/* Tarjeta de Ranking */}
+      {/* Tarjeta Ranking */}
       <div className="page-card">
         <div className="page-card-header">
           <FaChartBar />
           <span>Ranking de Estudiantes (Top 10 y Bottom 10)</span>
         </div>
         <div className="page-card-body">
-          <RankingBarrasEstudiantes data={dataRankingEstudiantes} />
+          <RankingBarrasEstudiantes
+            data={dataRanking}
+            onRankingDataChange={setRankingEstudiantesFinal}
+          />
         </div>
       </div>
     </div>
