@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "0.1.0",
-  "proxy": "https://apin.crazy-shaw.74-208-19-154.plesk.page",
+  "proxy": "https://apiatschool.roboticminds.ec",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.0",

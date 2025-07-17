@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://apin.crazy-shaw.74-208-19-154.plesk.page",
+  baseURL: "https://apiatschool.roboticminds.ec",
 
 });
 
