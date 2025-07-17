@@ -87,7 +87,7 @@ function RankingBarrasProfesores({ data, onRankingDataChange }) {
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={150} />
+            <YAxis style={{ textTransform: 'lowercase' }} dataKey="name" type="category" width={150} />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="minutos" fill="#8884d8" />
           </BarChart>
@@ -106,7 +106,7 @@ function RankingBarrasProfesores({ data, onRankingDataChange }) {
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={150} />
+              <YAxis style={{ textTransform: 'lowercase' }} dataKey="name" type="category" width={150} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="minutos" fill="#82ca9d" />
             </BarChart>

@@ -71,8 +71,9 @@ const PieEstudiantes = ({ data }) => {
           nameKey="name"
           cx="50%"
           cy="50%"
-          outerRadius={90}
-          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+          outerRadius={130}
+          labelLine={false}
+          label={false}
         >
           {topN.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={colorScale(entry.name)} />
