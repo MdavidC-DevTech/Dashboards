@@ -180,15 +180,17 @@ const ProfesoresPage = () => {
   const [pieCursosFinal, setPieCursosFinal] = useState([]);     // Recibido desde PieCursos
   const [dataRanking, setDataRanking] = useState([]);           // Bruto para Ranking
   const [rankingFinal, setRankingFinal] = useState([]);         // Recibido desde RankingBarrasProfesores
-
+  // Al principio de tu componente:
+  const PROFESSOR_SHORTNAMES = ["teacher", "profesorgenerartarea"];
   // Meta calculada
   const [meta, setMeta] = useState(0);
 
   // 1) Actualizar selects en base a la data
   useEffect(() => {
     if (data && data.length > 0) {
-      const soloProfes = data.filter((d) => d.role_shortname === "teacher");
-
+      const soloProfes = data.filter((d) =>
+        PROFESSOR_SHORTNAMES.includes(d.role_shortname)
+      );
       const cursos = obtenerCursosFiltrados(soloProfes, docenteSeleccionado);
       setCursosDisponibles(cursos);
       if (cursoSeleccionado && !cursos.includes(cursoSeleccionado)) {
@@ -207,7 +209,9 @@ const ProfesoresPage = () => {
   useEffect(() => {
     if (data && data.length > 0) {
       runWithLoader(() => {
-        const soloProfes = data.filter((d) => d.role_shortname === "teacher");
+        const soloProfes = data.filter((d) =>
+          PROFESSOR_SHORTNAMES.includes(d.role_shortname)
+        );
         let filtrados = soloProfes;
 
         if (cursoSeleccionado) {
@@ -251,7 +255,9 @@ const ProfesoresPage = () => {
   // 3) Data Distribución en bruto => { course_fullname, active_seconds }
   useEffect(() => {
     if (data && data.length > 0) {
-      const soloProfes = data.filter((d) => d.role_shortname === "teacher");
+      const soloProfes = data.filter((d) =>
+        PROFESSOR_SHORTNAMES.includes(d.role_shortname)
+      );
       let filtrados = soloProfes;
 
       if (yearSeleccionado) {
@@ -283,7 +289,9 @@ const ProfesoresPage = () => {
   // 4) Data Ranking en bruto => { user_fname, user_sname, active_seconds, course_fullname }
   useEffect(() => {
     if (data && data.length > 0) {
-      const soloProfes = data.filter((d) => d.role_shortname === "teacher");
+      const soloProfes = data.filter((d) =>
+        PROFESSOR_SHORTNAMES.includes(d.role_shortname)
+      );
       let filtrados = soloProfes;
 
       if (yearSeleccionado) {
